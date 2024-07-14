@@ -32,7 +32,7 @@ def main():
 
 
    #MODEL TRAINING
-   train_model_v1(model, train_x, train_y, test_x, test_y, use_cuda,lr=0.0005,momentum=0.90, epochs=50)
+   train_model_v1(model, train_x, train_y, test_x, test_y, use_cuda,lr=0.0001,momentum=0.90, epochs=50)
 
    #MODEL EVAL+TEST
    predictions = model(test_x)

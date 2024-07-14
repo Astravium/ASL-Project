@@ -96,8 +96,8 @@ def train_model_v1(model, train_x, train_y, test_x, test_y, use_cuda, lr=0.01, m
 
    for e in range(epochs):
       for i in range(0, train_x.shape[0], 64):
-         x_mini = train_x[i:i + 64] 
          y_mini = train_y[i:i + 64] 
+         x_mini = train_x[i:i + 64] 
          
          if use_cuda:
                x_mini = x_mini.cuda()
