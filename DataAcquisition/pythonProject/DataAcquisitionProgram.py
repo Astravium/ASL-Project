@@ -2,7 +2,7 @@
 import os
 import re
 import tkinter as tk
-from tkinter import simpledialog
+from tkinter import messagebox
 
 # Funzione per trovare il prossimo numero di cattura disponibile
 def get_next_capture_number(directory, name, letter):
@@ -33,7 +33,7 @@ def capture_images(name, letter):
     capture_count = get_next_capture_number(dataset_dir, name, letter)
 
     # Dimensione dell'immagine ritagliata
-    crop_size = 192
+    crop_size = 192  # Ridotto per un quadrato di cattura leggermente più piccolo
 
     # Apri la webcam
     cap = cv2.VideoCapture(0)
@@ -42,6 +42,8 @@ def capture_images(name, letter):
         return
 
     print("Premi 'c' per catturare e salvare l'immagine, 'q' per uscire.")
+
+    window_name = "Acquisizione"
 
     while True:
         ret, frame = cap.read()
@@ -64,7 +66,7 @@ def capture_images(name, letter):
         cv2.rectangle(frame_with_rectangle, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
         # Mostra il frame con il riquadro
-        cv2.imshow("Acquisizione", frame_with_rectangle)
+        cv2.imshow(window_name, frame_with_rectangle)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('c'):
@@ -77,20 +79,69 @@ def capture_images(name, letter):
             print("Uscita dal programma.")
             break
 
+        # Verifica se la finestra è stata chiusa
+        try:
+            if cv2.getWindowProperty(window_name, cv2.WND_PROP_AUTOSIZE) < 0:
+                print("Finestra chiusa")
+                break
+        except cv2.error:
+            print("Finestra chiusa con eccezione")
+            break
+
     cap.release()
     cv2.destroyAllWindows()
 
+# Funzione per creare la finestra di dialogo personalizzata
+def get_user_input():
+    def on_submit():
+        global user_name, user_letter
+        user_name = name_entry.get().upper()
+        user_letter = letter_entry.get().lower()
+
+        # Controlli di validità
+        if not user_name:
+            messagebox.showerror("Errore", "Il nome non può essere vuoto.")
+            return
+        if not user_letter or len(user_letter) != 1:
+            messagebox.showerror("Errore", "Il carattere deve essere esattamente uno.")
+            return
+        if user_letter in ['g', 's', 'j', 'z']:
+            messagebox.showerror("Errore", "Il carattere inserito non è consentito.\nI caratteri G, S, J, Z sono esclusi.")
+            return
+
+        dialog.destroy()
+
+    def on_close():
+        global window_closed
+        window_closed = True
+        dialog.destroy()
+
+    dialog = tk.Tk()
+    dialog.title("Inserisci le informazioni")
+    dialog.geometry("400x300")  # Imposta la dimensione della finestra
+
+    tk.Label(dialog, text="Nome:", font=("Arial", 14)).pack(pady=10)
+    name_entry = tk.Entry(dialog, font=("Arial", 14))
+    name_entry.pack(pady=10)
+
+    tk.Label(dialog, text="Carattere della LIS:", font=("Arial", 14)).pack(pady=10)
+    letter_entry = tk.Entry(dialog, font=("Arial", 14))
+    letter_entry.pack(pady=10)
+
+    submit_button = tk.Button(dialog, text="Submit", font=("Arial", 14), command=on_submit)
+    submit_button.pack(pady=20)
+
+    dialog.protocol("WM_DELETE_WINDOW", on_close)
+
+    dialog.mainloop()
+
 # Funzione per avviare l'interfaccia utente
 def start_ui():
-    root = tk.Tk()
-    root.withdraw()  # Nascondi la finestra principale
-
-    # Chiedi il nome e la lettera utilizzando finestre di dialogo
-    name = simpledialog.askstring("Input", "Inserisci il tuo nome:").upper()
-    letter = simpledialog.askstring("Input", "Inserisci il carattere della LIS:").lower()
-
-    # Avvia la cattura delle immagini
-    capture_images(name, letter)
+    global window_closed
+    window_closed = False
+    get_user_input()
+    if not window_closed:
+        capture_images(user_name, user_letter)
 
 if __name__ == "__main__":
     start_ui()
