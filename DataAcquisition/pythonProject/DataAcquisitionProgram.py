@@ -19,7 +19,8 @@ def get_next_capture_number(directory, name, letter):
 
 # Funzione per salvare l'immagine
 def save_image(image, filename):
-    cv2.imwrite(filename, image)
+    resized_image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_AREA)
+    cv2.imwrite(filename, resized_image)
     print(f'Immagine salvata come {filename}')
 
 # Funzione principale per la cattura delle immagini
@@ -32,7 +33,7 @@ def capture_images(name, letter):
     capture_count = get_next_capture_number(dataset_dir, name, letter)
 
     # Dimensione dell'immagine ritagliata
-    crop_size = 64
+    crop_size = 192
 
     # Apri la webcam
     cap = cv2.VideoCapture(0)
@@ -48,20 +49,29 @@ def capture_images(name, letter):
             print("Errore: Impossibile acquisire l'immagine")
             break
 
-        # Ritaglia un quadrato di 64x64 pixel dal centro dell'immagine
+        # Dimensioni del frame
         h, w, _ = frame.shape
+
+        # Coordinate del centro del frame
         center_x, center_y = w // 2, h // 2
+
+        # Coordinate del riquadro di cattura
         x1, y1 = center_x - crop_size // 2, center_y - crop_size // 2
         x2, y2 = center_x + crop_size // 2, center_y + crop_size // 2
-        crop_img = frame[y1:y2, x1:x2]
 
-        # Mostra l'immagine ritagliata
-        cv2.imshow("Acquisizione", crop_img)
+        # Disegna un riquadro verde al centro del frame (prima di catturare l'immagine)
+        frame_with_rectangle = frame.copy()
+        cv2.rectangle(frame_with_rectangle, (x1, y1), (x2, y2), (0, 255, 0), 2)
+
+        # Mostra il frame con il riquadro
+        cv2.imshow("Acquisizione", frame_with_rectangle)
 
         key = cv2.waitKey(1) & 0xFF
         if key == ord('c'):
+            # Cattura l'immagine alla risoluzione normale senza il bordo verde
+            capture_img = frame[y1:y2, x1:x2]
             filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
-            save_image(crop_img, filename)
+            save_image(capture_img, filename)
             capture_count += 1
         elif key == ord('q'):
             print("Uscita dal programma.")
