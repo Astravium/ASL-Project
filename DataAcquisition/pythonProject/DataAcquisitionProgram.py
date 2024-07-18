@@ -4,6 +4,11 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
+# Define global variables
+window_closed = False
+user_name = ""
+user_letter = ""
+
 
 # Funzione per trovare il prossimo numero di cattura disponibile
 def get_next_capture_number(directory, name, letter):
@@ -47,7 +52,7 @@ def capture_images(name, letter):
     print("Premi 'c' per catturare e salvare l'immagine, 'q' per uscire.")
 
     window_name = "Acquisizione"
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+    cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)  # Crea una finestra non ridimensionabile
 
     # Utilizza tkinter per ottenere le dimensioni dello schermo
     root = tk.Tk()
@@ -112,7 +117,7 @@ def capture_images(name, letter):
 
 # Funzione per creare la finestra di dialogo personalizzata
 def get_user_input():
-    def on_submit():
+    def on_submit(event=None):
         global user_name, user_letter
         user_name = name_entry.get().upper()
         user_letter = letter_entry.get().lower()
@@ -121,12 +126,18 @@ def get_user_input():
         if not user_name:
             messagebox.showerror("Errore", "Il nome non può essere vuoto.")
             return
+        if user_name.isdigit():
+            messagebox.showerror("Errore", "Il nome non può essere un numero.")
+            return
         if not user_letter or len(user_letter) != 1:
             messagebox.showerror("Errore", "Il carattere deve essere esattamente uno.")
             return
         if user_letter in ['g', 's', 'j', 'z']:
-            messagebox.showerror("Errore",
-                                 "Il carattere inserito non è consentito.\nI caratteri G, S, J, Z sono esclusi.")
+            messagebox.showerror("Errore", "Il carattere inserito non è consentito.\n"
+                                           "I caratteri G, S, J, Z sono esclusi.")
+            return
+        if user_letter.isdigit():
+            messagebox.showerror("Errore", "Il carattere non può essere un numero.")
             return
 
         dialog.destroy()
@@ -159,6 +170,7 @@ def get_user_input():
     submit_button = tk.Button(dialog, text="Submit", font=("Arial", 14), command=on_submit)
     submit_button.pack(pady=20)
 
+    dialog.bind('<Return>', on_submit)
     dialog.protocol("WM_DELETE_WINDOW", on_close)
 
     dialog.mainloop()
