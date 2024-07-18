@@ -4,6 +4,7 @@ import re
 import tkinter as tk
 from tkinter import messagebox
 
+
 # Funzione per trovare il prossimo numero di cattura disponibile
 def get_next_capture_number(directory, name, letter):
     existing_files = os.listdir(directory)
@@ -17,11 +18,13 @@ def get_next_capture_number(directory, name, letter):
                 max_number = number
     return max_number + 1
 
+
 # Funzione per salvare l'immagine
 def save_image(image, filename):
     resized_image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_AREA)
     cv2.imwrite(filename, resized_image)
     print(f'Immagine salvata come {filename}')
+
 
 # Funzione principale per la cattura delle immagini
 def capture_images(name, letter):
@@ -33,7 +36,7 @@ def capture_images(name, letter):
     capture_count = get_next_capture_number(dataset_dir, name, letter)
 
     # Dimensione dell'immagine ritagliata
-    crop_size = 192  # Ridotto per un quadrato di cattura leggermente più piccolo
+    crop_size = 192
 
     # Apri la webcam
     cap = cv2.VideoCapture(0)
@@ -44,6 +47,21 @@ def capture_images(name, letter):
     print("Premi 'c' per catturare e salvare l'immagine, 'q' per uscire.")
 
     window_name = "Acquisizione"
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
+
+    # Utilizza tkinter per ottenere le dimensioni dello schermo
+    root = tk.Tk()
+    root.withdraw()  # Nasconde la finestra principale di tkinter
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    root.destroy()
+
+    # Centra la finestra di acquisizione sullo schermo
+    window_width = 640  # Larghezza della finestra
+    window_height = 480  # Altezza della finestra
+    pos_x = int((screen_width - window_width) / 2)
+    pos_y = int((screen_height - window_height) / 2)
+    cv2.moveWindow(window_name, pos_x, pos_y)
 
     while True:
         ret, frame = cap.read()
@@ -91,6 +109,7 @@ def capture_images(name, letter):
     cap.release()
     cv2.destroyAllWindows()
 
+
 # Funzione per creare la finestra di dialogo personalizzata
 def get_user_input():
     def on_submit():
@@ -106,7 +125,8 @@ def get_user_input():
             messagebox.showerror("Errore", "Il carattere deve essere esattamente uno.")
             return
         if user_letter in ['g', 's', 'j', 'z']:
-            messagebox.showerror("Errore", "Il carattere inserito non è consentito.\nI caratteri G, S, J, Z sono esclusi.")
+            messagebox.showerror("Errore",
+                                 "Il carattere inserito non è consentito.\nI caratteri G, S, J, Z sono esclusi.")
             return
 
         dialog.destroy()
@@ -118,7 +138,15 @@ def get_user_input():
 
     dialog = tk.Tk()
     dialog.title("Inserisci le informazioni")
-    dialog.geometry("400x300")  # Imposta la dimensione della finestra
+
+    # Centra la finestra di dialogo sullo schermo
+    window_width = 400
+    window_height = 300
+    screen_width = dialog.winfo_screenwidth()
+    screen_height = dialog.winfo_screenheight()
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_right = int(screen_width / 2 - window_width / 2)
+    dialog.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
 
     tk.Label(dialog, text="Nome:", font=("Arial", 14)).pack(pady=10)
     name_entry = tk.Entry(dialog, font=("Arial", 14))
@@ -135,6 +163,7 @@ def get_user_input():
 
     dialog.mainloop()
 
+
 # Funzione per avviare l'interfaccia utente
 def start_ui():
     global window_closed
@@ -142,6 +171,7 @@ def start_ui():
     get_user_input()
     if not window_closed:
         capture_images(user_name, user_letter)
+
 
 if __name__ == "__main__":
     start_ui()
