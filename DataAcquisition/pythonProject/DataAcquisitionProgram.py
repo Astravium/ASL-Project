@@ -3,11 +3,15 @@ import os
 import re
 import tkinter as tk
 from tkinter import messagebox
+from PIL import Image, ImageTk
 
 # Define global variables
 window_closed = False
 user_name = ""
 user_letter = ""
+capture_requested = False
+quit_requested = False
+capture_count = 0
 
 
 # Funzione per trovare il prossimo numero di cattura disponibile
@@ -31,8 +35,23 @@ def save_image(image, filename):
     print(f'Immagine salvata come {filename}')
 
 
+# Funzione per gestire i click dei pulsanti
+def capture_image():
+    global capture_requested
+    capture_requested = True
+
+
+def close_window():
+    global quit_requested
+    quit_requested = True
+
+
 # Funzione principale per la cattura delle immagini
 def capture_images(name, letter):
+    global capture_requested, quit_requested, capture_count
+    capture_requested = False
+    quit_requested = False
+
     # Crea la cartella per il dataset se non esiste
     dataset_dir = os.path.join("Dataset", letter)
     os.makedirs(dataset_dir, exist_ok=True)
@@ -49,30 +68,44 @@ def capture_images(name, letter):
         print("Errore: Impossibile aprire la webcam")
         return
 
-    print("Premi 'c' per catturare e salvare l'immagine, 'q' per uscire.")
+    print("Usa i pulsanti per catturare l'immagine o chiudere la finestra.")
 
-    window_name = "Acquisizione"
-    cv2.namedWindow(window_name, cv2.WINDOW_AUTOSIZE)  # Crea una finestra non ridimensionabile
-
-    # Utilizza tkinter per ottenere le dimensioni dello schermo
+    # Configura la finestra Tkinter
     root = tk.Tk()
-    root.withdraw()  # Nasconde la finestra principale di tkinter
-    screen_width = root.winfo_screenwidth()
-    screen_height = root.winfo_screenheight()
-    root.destroy()
+    root.title("Acquisizione")
+    root.protocol("WM_DELETE_WINDOW", close_window)
+
+    # Dimensioni della finestra
+    window_width = 800
+    window_height = 600
 
     # Centra la finestra di acquisizione sullo schermo
-    window_width = 640  # Larghezza della finestra
-    window_height = 480  # Altezza della finestra
-    pos_x = int((screen_width - window_width) / 2)
-    pos_y = int((screen_height - window_height) / 2)
-    cv2.moveWindow(window_name, pos_x, pos_y)
+    screen_width = root.winfo_screenwidth()
+    screen_height = root.winfo_screenheight()
+    position_top = int(screen_height / 2 - window_height / 2)
+    position_right = int(screen_width / 2 - window_width / 2)
+    root.geometry(f"{window_width}x{window_height}+{position_right}+{position_top}")
 
-    while True:
+    # Canvas per visualizzare il feed della webcam
+    canvas = tk.Canvas(root, width=640, height=480)
+    canvas.pack()
+
+    # Frame per posizionare i pulsanti in basso al centro
+    button_frame = tk.Frame(root)
+    button_frame.pack(side=tk.BOTTOM, pady=10)
+
+    # Aggiungi i pulsanti
+    btn_capture = tk.Button(button_frame, text="Acquisisci (c)", command=capture_image)
+    btn_capture.pack(side=tk.LEFT, padx=20)
+    btn_close = tk.Button(button_frame, text="Chiudi (q)", command=close_window)
+    btn_close.pack(side=tk.RIGHT, padx=20)
+
+    def update_frame():
+        global capture_requested, quit_requested, capture_count
         ret, frame = cap.read()
         if not ret:
             print("Errore: Impossibile acquisire l'immagine")
-            break
+            return
 
         # Dimensioni del frame
         h, w, _ = frame.shape
@@ -85,34 +118,38 @@ def capture_images(name, letter):
         x2, y2 = center_x + crop_size // 2, center_y + crop_size // 2
 
         # Disegna un riquadro verde al centro del frame (prima di catturare l'immagine)
-        frame_with_rectangle = frame.copy()
-        cv2.rectangle(frame_with_rectangle, (x1, y1), (x2, y2), (0, 255, 0), 2)
+        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
-        # Mostra il frame con il riquadro
-        cv2.imshow(window_name, frame_with_rectangle)
+        # Converti il frame in un'immagine Tkinter
+        frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        frame_pil = Image.fromarray(frame_rgb)
+        frame_tk = ImageTk.PhotoImage(image=frame_pil)
 
-        key = cv2.waitKey(1) & 0xFF
-        if key == ord('c'):
+        # Aggiorna il canvas con la nuova immagine
+        canvas.create_image(0, 0, anchor=tk.NW, image=frame_tk)
+        canvas.image = frame_tk
+
+        if capture_requested:
             # Cattura l'immagine alla risoluzione normale senza il bordo verde
             capture_img = frame[y1:y2, x1:x2]
             filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
             save_image(capture_img, filename)
             capture_count += 1
-        elif key == ord('q'):
-            print("Uscita dal programma.")
-            break
+            capture_requested = False  # Reset della richiesta di cattura
 
-        # Verifica se la finestra è stata chiusa
-        try:
-            if cv2.getWindowProperty(window_name, cv2.WND_PROP_AUTOSIZE) < 0:
-                print("Finestra chiusa")
-                break
-        except cv2.error:
-            print("Finestra chiusa con eccezione")
-            break
+        if not quit_requested:
+            root.after(10, update_frame)
+        else:
+            cap.release()
+            root.destroy()
 
-    cap.release()
-    cv2.destroyAllWindows()
+    update_frame()
+
+    # Mappa i tasti "c" e "q" per i pulsanti corrispondenti
+    root.bind('<c>', lambda event: capture_image())
+    root.bind('<q>', lambda event: close_window())
+
+    root.mainloop()
 
 
 # Funzione per creare la finestra di dialogo personalizzata
