@@ -15,10 +15,13 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
 
+# Define image resolution
+imageResolution = (64, 64)
+
 # Define transformations
 transform = transforms.Compose([
     transforms.Grayscale(),
-    transforms.Resize((28, 28)),
+    transforms.Resize(imageResolution),
     transforms.ToTensor(),
     transforms.Normalize((0.5,), (0.5,))
 ])
