@@ -32,7 +32,7 @@ def get_next_capture_number(directory, name, letter):
 def save_image(image, filename):
     resized_image = cv2.resize(image, (64, 64), interpolation=cv2.INTER_AREA)
     cv2.imwrite(filename, resized_image)
-    print(f'Immagine salvata come {filename}')
+    log_message(f'Immagine salvata come {filename}')
 
 
 # Funzione per gestire i click dei pulsanti
@@ -46,9 +46,17 @@ def close_window():
     quit_requested = True
 
 
+# Funzione per loggare messaggi nella finestra
+def log_message(message):
+    log_text.config(state=tk.NORMAL)
+    log_text.insert(tk.END, message + "\n")
+    log_text.config(state=tk.DISABLED)
+    log_text.see(tk.END)
+
+
 # Funzione principale per la cattura delle immagini
 def capture_images(name, letter):
-    global capture_requested, quit_requested, capture_count
+    global capture_requested, quit_requested, capture_count, log_text
     capture_requested = False
     quit_requested = False
 
@@ -100,11 +108,15 @@ def capture_images(name, letter):
     btn_close = tk.Button(button_frame, text="Chiudi (q)", command=close_window)
     btn_close.pack(side=tk.RIGHT, padx=20)
 
+    # Text widget per loggare messaggi
+    log_text = tk.Text(root, height=10, state=tk.DISABLED)
+    log_text.pack(side=tk.BOTTOM, fill=tk.X)
+
     def update_frame():
         global capture_requested, quit_requested, capture_count
         ret, frame = cap.read()
         if not ret:
-            print("Errore: Impossibile acquisire l'immagine")
+            log_message("Errore: Impossibile acquisire l'immagine")
             return
 
         # Dimensioni del frame
@@ -148,6 +160,8 @@ def capture_images(name, letter):
     # Mappa i tasti "c" e "q" per i pulsanti corrispondenti
     root.bind('<c>', lambda event: capture_image())
     root.bind('<q>', lambda event: close_window())
+
+    log_message("Usa i pulsanti per catturare l'immagine o chiudere la finestra.")
 
     root.mainloop()
 
