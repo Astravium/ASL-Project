@@ -5,10 +5,8 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
-''''
-import numpy as np
-import random
-'''
+# import numpy as np
+# import random
 
 # Define global variables
 window_closed = False
@@ -33,8 +31,8 @@ def get_next_capture_number(directory, name, letter):
     return max_number + 1
 
 
-'''
 # Funzione per applicare data augmentation
+'''
 def augment_image(image, w, h):
     # Flip orizzontale
     if random.choice([True, False]):
@@ -171,7 +169,7 @@ def capture_images(name, letter):
         if capture_requested:
             # Cattura l'immagine alla risoluzione normale senza il bordo verde
             capture_img = frame[y1:y2, x1:x2]
-            '''capture_img = augment_image(capture_img, x2 - x1, y2 - y1)  # Applica data augmentation'''
+            # capture_img = augment_image(capture_img, x2 - x1, y2 - y1)  # Applica data augmentation
             filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
             save_image(capture_img, filename)
             capture_count += 1
