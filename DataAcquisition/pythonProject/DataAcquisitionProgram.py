@@ -5,6 +5,11 @@ import tkinter as tk
 from tkinter import messagebox
 from PIL import Image, ImageTk
 
+''''
+import numpy as np
+import random
+'''
+
 # Define global variables
 window_closed = False
 user_name = ""
@@ -26,6 +31,40 @@ def get_next_capture_number(directory, name, letter):
             if number > max_number:
                 max_number = number
     return max_number + 1
+
+
+'''
+# Funzione per applicare data augmentation
+def augment_image(image, w, h):
+    # Flip orizzontale
+    if random.choice([True, False]):
+        image = cv2.flip(image, 1)
+
+    # Rotazione
+    if random.choice([True, False]):
+        angle = random.randint(-15, 15)
+        M = cv2.getRotationMatrix2D((w / 2, h / 2), angle, 1)
+        image = cv2.warpAffine(image, M, (w, h))
+
+    # Traslazione
+    if random.choice([True, False]):
+        x_shift = random.randint(-10, 10)
+        y_shift = random.randint(-10, 10)
+        M = np.float32([[1, 0, x_shift], [0, 1, y_shift]])
+        image = cv2.warpAffine(image, M, (w, h))
+
+    # Cambio luminosità
+    if random.choice([True, False]):
+        value = random.randint(-30, 30)
+        hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        h, s, v = cv2.split(hsv)
+        v = cv2.add(v, value)
+        v = np.clip(v, 0, 255)
+        final_hsv = cv2.merge((h, s, v))
+        image = cv2.cvtColor(final_hsv, cv2.COLOR_HSV2BGR)
+
+    return image
+'''
 
 
 # Funzione per salvare l'immagine
@@ -132,6 +171,7 @@ def capture_images(name, letter):
         if capture_requested:
             # Cattura l'immagine alla risoluzione normale senza il bordo verde
             capture_img = frame[y1:y2, x1:x2]
+            '''capture_img = augment_image(capture_img, x2 - x1, y2 - y1)  # Applica data augmentation'''
             filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
             save_image(capture_img, filename)
             capture_count += 1
