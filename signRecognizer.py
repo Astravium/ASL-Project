@@ -4,6 +4,7 @@ from tkinter import Label
 from PIL import Image, ImageTk
 import torch
 import torchvision.transforms as transforms
+import numpy as np
 
 alph = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'ERROR_6', 7: 'H', 8: 'I', 9: 'ERROR_9',
         10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'ERROR_18',
@@ -29,6 +30,7 @@ transform = transforms.Compose([
 # List to store characters
 characters = []
 
+gesture_to_alphabet = None
 
 def get_center_coordinates(frame, size=350):
     """Utility function to get the center square of the frame"""
@@ -46,7 +48,7 @@ def detect_gesture(frame, input_model):
     with torch.no_grad():
         output = input_model(hand_img)
     gesture = output.argmax(dim=1).item()
-    return gesture
+    return gesture, hand_img
 
 
 def update_frame():
@@ -65,8 +67,7 @@ def update_frame():
     cv2.rectangle(frame, (x, y), (x + size, y + size), (0, 255, 0), 2)
 
     # Check if the hand is in the center square and predict gesture using the trained model
-    hand_in_center = frame[y:y + size, x:x + size]
-    gesture = detect_gesture(hand_in_center, model)
+    gesture, hand_img = detect_gesture(frame, model)
 
     # Display the gesture on the frame
     global gesture_to_alphabet
@@ -74,14 +75,26 @@ def update_frame():
     gesture_text = f"Gesture: {gesture_to_alphabet}"
     cv2.putText(frame, gesture_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
 
+    # Convert hand_img to Image for Tkinter
+    hand_img_np = hand_img.squeeze().cpu().numpy()
+    hand_img_np = ((hand_img_np - hand_img_np.min()) / (hand_img_np.max() - hand_img_np.min()) * 255).astype(np.uint8)
+    hand_img_np = cv2.cvtColor(hand_img_np, cv2.COLOR_GRAY2RGB)
+    hand_img_pil = Image.fromarray(hand_img_np)
+    hand_img_tk = ImageTk.PhotoImage(image=hand_img_pil)
+
     # Convert frame to Image for Tkinter
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     img = Image.fromarray(img)
-    img = ImageTk.PhotoImage(image=img)
+    img_tk = ImageTk.PhotoImage(image=img)
 
     # Update the label with the new frame
-    label.imgtk = img
-    label.config(image=img)
+    label.imgtk = img_tk
+    label.config(image=img_tk)
+
+    # Display the hand_img on the bottom right
+    hand_img_label.imgtk = hand_img_tk
+    hand_img_label.config(image=hand_img_tk)
+
     label.after(16, update_frame) # 16ms => 60 FPS
 
     # Update the character list display (Not needed, we do that with an event function)
@@ -107,6 +120,9 @@ root.title("Sign Language Recognition")
 
 label = Label(root)
 label.pack()
+
+hand_img_label = Label(root)
+hand_img_label.pack(side=tk.RIGHT, padx=10, pady=10)
 
 char_list_label = Label(root, text="", font=('Helvetica', 18))
 char_list_label.pack()
