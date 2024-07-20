@@ -117,7 +117,15 @@ def capture_images(name, letter):
         x1, y1 = center_x - crop_size // 2, center_y - crop_size // 2
         x2, y2 = center_x + crop_size // 2, center_y + crop_size // 2
 
-        # Disegna un riquadro verde al centro del frame (prima di catturare l'immagine)
+        if capture_requested:
+            # Cattura l'immagine alla risoluzione normale senza il bordo verde
+            capture_img = frame[y1:y2, x1:x2]
+            filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
+            save_image(capture_img, filename)
+            capture_count += 1
+            capture_requested = False  # Reset della richiesta di cattura
+
+        # Disegna un riquadro verde al centro del frame (dopo la cattura dell'immagine)
         cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
 
         # Converti il frame in un'immagine Tkinter
@@ -128,14 +136,6 @@ def capture_images(name, letter):
         # Aggiorna il canvas con la nuova immagine
         canvas.create_image(0, 0, anchor=tk.NW, image=frame_tk)
         canvas.image = frame_tk
-
-        if capture_requested:
-            # Cattura l'immagine alla risoluzione normale senza il bordo verde
-            capture_img = frame[y1:y2, x1:x2]
-            filename = os.path.join(dataset_dir, f"{letter}_{name}_{capture_count}.jpg")
-            save_image(capture_img, filename)
-            capture_count += 1
-            capture_requested = False  # Reset della richiesta di cattura
 
         if not quit_requested:
             root.after(10, update_frame)
