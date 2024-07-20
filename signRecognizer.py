@@ -5,12 +5,12 @@ from PIL import Image, ImageTk
 import torch
 import torchvision.transforms as transforms
 
-alph = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 7: 'H', 8: 'I',
-        10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R',
-        19: 'T', 20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y'}
+alph = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'ERROR_6', 7: 'H', 8: 'I', 9: 'ERROR_9',
+        10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'ERROR_18',
+        19: 'T', 20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'ERROR_25'}
 
 # Load the pre-trained model
-model = torch.load('model_v1_trained.pt')
+model = torch.load("bello_modello.pt")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
