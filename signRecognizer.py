@@ -6,12 +6,33 @@ import torch
 import torchvision.transforms as transforms
 import numpy as np
 
-alph = {0: 'A', 1: 'B', 2: 'C', 3: 'D', 4: 'E', 5: 'F', 6: 'ERROR_6', 7: 'H', 8: 'I', 9: 'ERROR_9',
-        10: 'K', 11: 'L', 12: 'M', 13: 'N', 14: 'O', 15: 'P', 16: 'Q', 17: 'R', 18: 'ERROR_18',
-        19: 'T', 20: 'U', 21: 'V', 22: 'W', 23: 'X', 24: 'Y', 25: 'ERROR_25'}
+alph = {
+    0: 'a',
+    1: 'b',
+    2: 'c',
+    3: 'd',
+    4: 'e',
+    5: 'f',
+    6: 'h',
+    7: 'i',
+    8: 'k',
+    9: 'l',
+    10: 'm',
+    11: 'n',
+    12: 'o',
+    13: 'p',
+    14: 'q',
+    15: 'r',
+    16: 't',
+    17: 'u',
+    18: 'v',
+    19: 'w',
+    20: 'x',
+    21: 'y',
+}
 
 # Load the pre-trained model
-model = torch.load("bello_modello.pt")
+model = torch.load("SignLanguageCNN_lr_0001_mom99_ep15.pt")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
@@ -21,10 +42,9 @@ imageResolution = (64, 64)
 
 # Define transformations
 transform = transforms.Compose([
-    transforms.Grayscale(),
+    # transforms.Grayscale(),
     transforms.Resize(imageResolution),
     transforms.ToTensor(),
-    transforms.Normalize((0.5,), (0.5,))
 ])
 
 # List to store characters
@@ -41,10 +61,11 @@ def get_center_coordinates(frame, size=350):
 
 def detect_gesture(frame, input_model):
     """ Detects the gesture in the center square of the frame with the trained model """
-    # Assume the model expects a 28x28 input image
+
     x, y, size = get_center_coordinates(frame)
     hand_img = frame[y:y + size, x:x + size]
-    hand_img = transform(Image.fromarray(hand_img)).unsqueeze(0).to(device)
+    hand_img = transform(Image.fromarray(hand_img)).to(device)
+    hand_img = hand_img.unsqueeze(0)
     with torch.no_grad():
         output = input_model(hand_img)
     gesture = output.argmax(dim=1).item()
@@ -60,7 +81,7 @@ def update_frame():
     if not ret:
         return
 
-    frame = cv2.flip(frame, 1)
+    # frame = cv2.flip(frame, 1)
 
     # Draw green square in the center
     x, y, size = get_center_coordinates(frame)
@@ -78,9 +99,9 @@ def update_frame():
     # Convert hand_img to Image for Tkinter
     hand_img_np = hand_img.squeeze().cpu().numpy()
     hand_img_np = ((hand_img_np - hand_img_np.min()) / (hand_img_np.max() - hand_img_np.min()) * 255).astype(np.uint8)
-    hand_img_np = cv2.cvtColor(hand_img_np, cv2.COLOR_GRAY2RGB)
-    hand_img_pil = Image.fromarray(hand_img_np)
-    hand_img_tk = ImageTk.PhotoImage(image=hand_img_pil)
+    # hand_img_np = cv2.cvtColor(hand_img_np, cv2.COLOR_GRAY2RGB)
+    # hand_img_pil = Image.fromarray(hand_img_np)
+    # hand_img_tk = ImageTk.PhotoImage(image=hand_img_pil)
 
     # Convert frame to Image for Tkinter
     img = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -92,8 +113,8 @@ def update_frame():
     label.config(image=img_tk)
 
     # Display the hand_img on the bottom right
-    hand_img_label.imgtk = hand_img_tk
-    hand_img_label.config(image=hand_img_tk)
+    # hand_img_label.imgtk = hand_img_tk
+    # hand_img_label.config(image=hand_img_tk)
 
     label.after(16, update_frame) # 16ms => 60 FPS
 
