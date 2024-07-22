@@ -94,7 +94,7 @@ def update_frame():
     global gesture_to_alphabet
     gesture_to_alphabet = alph[gesture]
     gesture_text = f"Gesture: {gesture_to_alphabet}"
-    cv2.putText(frame, gesture_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+    cv2.putText(frame, gesture_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
 
     # Convert hand_img to Image for Tkinter
     hand_img_np = hand_img.squeeze().cpu().numpy()
