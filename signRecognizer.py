@@ -32,7 +32,7 @@ alph = {
 }
 
 # Load the pre-trained model
-model = torch.load("SignLanguageCNN_lr_0001_mom99_ep15.pt")
+model = torch.load("SignLanguage_DeepCNN_WithDropout_WithDA_LessParams_lr_001_mom99_ep2_elvio.pt")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model.to(device)
 model.eval()
@@ -42,7 +42,7 @@ imageResolution = (64, 64)
 
 # Define transformations
 transform = transforms.Compose([
-    # transforms.Grayscale(),
+    transforms.Grayscale(),
     transforms.Resize(imageResolution),
     transforms.ToTensor(),
 ])
@@ -64,6 +64,8 @@ def detect_gesture(frame, input_model):
 
     x, y, size = get_center_coordinates(frame)
     hand_img = frame[y:y + size, x:x + size]
+    test = Image.fromarray(hand_img)
+    # test.show()
     hand_img = transform(Image.fromarray(hand_img)).to(device)
     hand_img = hand_img.unsqueeze(0)
     with torch.no_grad():
@@ -85,7 +87,7 @@ def update_frame():
 
     # Draw green square in the center
     x, y, size = get_center_coordinates(frame)
-    cv2.rectangle(frame, (x, y), (x + size, y + size), (0, 255, 0), 2)
+    cv2.rectangle(frame, (x-5, y-5), (x + size, y + size), (0, 255, 0), 1)
 
     # Check if the hand is in the center square and predict gesture using the trained model
     gesture, hand_img = detect_gesture(frame, model)
@@ -97,8 +99,8 @@ def update_frame():
     cv2.putText(frame, gesture_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
 
     # Convert hand_img to Image for Tkinter
-    hand_img_np = hand_img.squeeze().cpu().numpy()
-    hand_img_np = ((hand_img_np - hand_img_np.min()) / (hand_img_np.max() - hand_img_np.min()) * 255).astype(np.uint8)
+    # hand_img_np = hand_img.squeeze().cpu().numpy()
+    # hand_img_np = ((hand_img_np - hand_img_np.min()) / (hand_img_np.max() - hand_img_np.min()) * 255).astype(np.uint8)
     # hand_img_np = cv2.cvtColor(hand_img_np, cv2.COLOR_GRAY2RGB)
     # hand_img_pil = Image.fromarray(hand_img_np)
     # hand_img_tk = ImageTk.PhotoImage(image=hand_img_pil)
@@ -111,16 +113,28 @@ def update_frame():
     # Update the label with the new frame
     label.imgtk = img_tk
     label.config(image=img_tk)
-
+    
     # Display the hand_img on the bottom right
     # hand_img_label.imgtk = hand_img_tk
     # hand_img_label.config(image=hand_img_tk)
 
     label.after(16, update_frame) # 16ms => 60 FPS
 
+    global current_frame
+    current_frame = frame
+
     # Update the character list display (Not needed, we do that with an event function)
     # char_list_label.config(text=" ".join(map(str, characters)))
 
+
+def detect_and_add_character(event):
+    
+    gesture = detect_gesture(current_frame, model)
+    print("Ciao")
+    # gesture.show()
+    gesture_to_alphabet = alph[gesture]
+    gesture_text = f"Gesture: {gesture_to_alphabet}"
+    cv2.putText(current_frame, gesture_text, (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 0), 2, cv2.LINE_AA)
 
 def add_character(event):
     """Event function to add the currently predicted gesture to the list of characters. Triggered by SPACEBAR"""
@@ -151,6 +165,7 @@ char_list_label.pack()
 # Bind events
 root.bind("<space>", add_character)
 root.bind("<Escape>", quit_program)
+# root.bind("<Return>", detect_and_add_character)
 
 # Get the camera feed
 cap = cv2.VideoCapture(0)
