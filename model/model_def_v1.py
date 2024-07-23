@@ -6,19 +6,19 @@ class SignLanguageCNN(nn.Module):
     def __init__(self):
         super(SignLanguageCNN, self).__init__()
 
-        self.conv1 = nn.Conv2d(3, 32, 3, padding=1)
-        self.conv2 = nn.Conv2d(32, 64, 3, padding=1)
-        self.conv3 = nn.Conv2d(64, 128, 3, padding=1)
-        self.conv4 = nn.Conv2d(128, 256, 3, padding=1)
+        self.conv1 = nn.Conv2d(3, 16, 3, padding=1, stride=1)
+        self.conv2 = nn.Conv2d(16, 32, 3, padding=1, stride=1)
+        self.conv3 = nn.Conv2d(32, 64, 3, padding=1, stride=1)
+        self.conv4 = nn.Conv2d(64, 64, 3, padding=1, stride=2)
 
         self.pool = nn.MaxPool2d(2, 2)
-        self.dropout_fc = nn.Dropout(0.5)
-        self.batch_norm1 = nn.BatchNorm2d(32)
-        self.batch_norm2 = nn.BatchNorm2d(64)
-        self.batch_norm3 = nn.BatchNorm2d(128)
-        self.batch_norm4 = nn.BatchNorm2d(256)
+        self.dropout_fc = nn.Dropout(0.15)
+        self.batch_norm1 = nn.BatchNorm2d(16)
+        self.batch_norm2 = nn.BatchNorm2d(32)
+        self.batch_norm3 = nn.BatchNorm2d(64)
+        self.batch_norm4 = nn.BatchNorm2d(64)
 
-        self.fc1 = nn.Linear(256 * 4 * 4, 1024) # 256 * 4 * 4 = 4096
+        self.fc1 = nn.Linear(64 * 4 * 4, 1024) # 64* 4 * 4 = 1024
         self.fc2 = nn.Linear(1024, 512)
         self.fc3 = nn.Linear(512, 22)
 
@@ -167,35 +167,41 @@ class SignLanguage_DeepCNN(nn.Module):
     def __init__(self):
         super(SignLanguage_DeepCNN, self).__init__()
         self.feature_extraction = nn.Sequential(
-            nn.Conv2d(1, 64, kernel_size=3, padding=1),
+            nn.Conv2d(1, 16, kernel_size=3, padding=1), #input: 1x64x64, output: 16x64x64
             nn.ReLU(),
 
-            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(16),
+            nn.Conv2d(16, 32, kernel_size=3, stride=1, padding=1), # input: 16x64x64, output: 32x64x64
+            nn.MaxPool2d(2, 2), #input: 32x64x64, output: 32x32x32
             nn.ReLU(),
-            nn.MaxPool2d(2, 2), # output: 128 x 16 x 16
 
-            nn.Conv2d(128, 128, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(32),
+            nn.Conv2d(32, 64, kernel_size=3, stride=1, padding=1), #input: 32x32x32, output: 64x32x32
+            nn.MaxPool2d(2, 2),  # input: 64x32x32, output: 64x16x16
             nn.ReLU(),
-            nn.Dropout(0.25),
 
-            nn.Conv2d(128, 256, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 64, kernel_size=3, stride=1, padding=1), #input: 64x16x16, output: 64x16x16
             nn.ReLU(),
-            nn.MaxPool2d(2, 2), # output: 256 x 8 x 8
+            # nn.MaxPool2d(2, 2),
 
-            nn.Conv2d(256, 512, kernel_size=3, stride=1, padding=1),
+            nn.BatchNorm2d(64),
+            nn.Conv2d(64, 128, kernel_size=3, stride=1, padding=1), #input: 64x16x16, output: 128x16x16
+            nn.MaxPool2d(2, 2), #input: 128x16x16, output: 128x8x8
             nn.ReLU(),
-            nn.Conv2d(512, 512, kernel_size=3, stride=1, padding=1),
-            nn.ReLU(),
-            nn.MaxPool2d(2, 2), # output: 512 x 4 x 4
         )
 
         self.classifier = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(512 * 8 * 8, 1024, bias=True), # 512 * 4 * 4 = 8192
+            nn.Dropout(0.20),
+            nn.Linear(128 * 8 * 8, 256, bias=True),
             nn.ReLU(),
-            nn.Linear(1024, 512, bias=True),
+            nn.Dropout(0.20),
+            nn.Linear(256, 128, bias=True),
             nn.ReLU(),
-            nn.Linear(512, 22, bias=True),
+            nn.Linear(128, 64, bias=True),
+            nn.ReLU(),
+            nn.Linear(64, 22, bias=True),
         )
 
     def forward(self, x):
